@@ -87,6 +87,10 @@ export default {
     student: {
       required: true,
       type: Object
+    },
+    suppressGradPrograms: {
+      required: false,
+      type: Boolean
     }
   },
   data: () => ({
@@ -96,9 +100,14 @@ export default {
     plansPartitionedByStatus: undefined
   }),
   created() {
-    this.plansMinorPartitionedByStatus = this._partition(this.student.sisProfile.plansMinor, (p) => p.status === 'Active')
-    this.plansPartitionedByStatus = this._partition(this.student.sisProfile.plans, (p) => p.status === 'Active')
-    this.discontinuedSubplans = this._compact(this._map(this.plansPartitionedByStatus[1], 'subplan'))
+    const planFilter = p => p.status === 'Active'
+    if (this.suppressGradPrograms && this.student.sisProfile.academicCareer === 'GRAD') {
+      this.plansMinorPartitionedByStatus = this.plansPartitionedByStatus = this.discontinuedSubplans = []
+    } else {
+      this.plansMinorPartitionedByStatus = this._partition(this.student.sisProfile.plansMinor, planFilter)
+      this.plansPartitionedByStatus = this._partition(this.student.sisProfile.plans, planFilter)
+      this.discontinuedSubplans = this._compact(this._map(this.plansPartitionedByStatus[1], 'subplan'))
+    }
   },
   mounted() {
     this.putFocusNextTick('student-name-header')
